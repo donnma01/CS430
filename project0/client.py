@@ -7,10 +7,11 @@ PORT = 4300
 
 
 def main(name: str):
+    print(name)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
         print('Connected to {}:{}'.format(HOST, PORT))
-        s.sendall("Hi, I'm {}".format(name).encode())
+        s.sendall(name.encode())
         data = s.recv(1024)
         print('Received: {}'.format(data.decode()))
         s.close()

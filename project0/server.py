@@ -15,10 +15,11 @@ def main():
             print('Accepted connection from {}'.format(addr))
             while True:
                 data = conn.recv(1024)
+                #print("Name: {}".format(data.decode()))
                 if not data:
                     print('Connection closed')
                     break
-                conn.sendall("Hello, Client".encode())
+                conn.sendall("Hello, {}".format(data.decode()).encode())
 
 
 if __name__ == '__main__':
