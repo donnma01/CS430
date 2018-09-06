@@ -17,7 +17,7 @@ def read_file(filename: str) -> dict:
     world = dict()
     for line in worldfile:
         linelst = line.split("-")
-        world[linelst[0]] = linelst[1].strip()
+        world[linelst[0].strip()] = linelst[1].strip()
     return world
 
 

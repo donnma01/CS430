@@ -18,7 +18,6 @@ def client():
         while not(ucountry == "BYE"):
             s.sendall(ucountry.encode())
             capital = s.recv(1024).decode()
-            print("HERE1")
             if capital == "NA":
                 print("-There is no such country")
             else:
