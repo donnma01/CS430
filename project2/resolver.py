@@ -186,6 +186,13 @@ def parse_response(resp_bytes: bytes):
 def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     '''Parse DNS server answers'''
     cplace = offset
+    if get_2_bits(resp_bytes[cplace:cplace+1])==3:
+        #keep track of where the reference was
+        cplace = get_offset([cplace:cplace+1])
+        while resp_bytes[cplace] != 0:
+            for j in range(1,resp_bytes[place]+1)
+
+
     answers = []
     for i in range(rr_ans):
         cooc = resp_bytes[cplace:cplace+2]
