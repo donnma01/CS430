@@ -82,7 +82,7 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
     thearray.append(twobytes[0])
     thearray.append(twobytes[1])
     domains = q_domain.split('.')
-    thearray.append(0)
+    thearray.append(1)
     thearray.append(0)
     thearray.append(0)
     thearray.append(1)
@@ -93,6 +93,8 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
     thearray.append(0)
     thearray.append(0)
     for domain in domains:
+        print(domain)
+        print(len(domain))
         thearray.append(len(domain))
         thearray.extend(bytearray(domain,'utf-8'))
     thearray.append(0)
@@ -100,6 +102,8 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
     thearray.append(1)
     thearray.append(0)
     thearray.append(1)
+
+    return thearray
 
 def send_request(q_message: bytearray, q_server: str) -> bytes:
     '''Contact the server'''
@@ -165,7 +169,9 @@ def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
 def resolve(query: str) -> None:
     '''Resolve the query'''
     q_type, q_domain, q_server = parse_cli_query(*query[0])
+    print(q_type,q_domain,q_server)
     query_bytes = format_query(q_type, q_domain)
+    print(query_bytes)
     response_bytes = send_request(query_bytes, q_server)
     answers = parse_response(response_bytes)
     print('DNS server used: {}'.format(q_server))
