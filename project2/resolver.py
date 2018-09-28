@@ -46,7 +46,7 @@ def val_to_n_bytes(value: int, n_bytes: int) -> list:
     returnlst = []
     for i in range(n_bytes):
         newvalue = reducedvalue & 0xFF
-        returnlist.insert(0,newvalue)
+        returnlst.insert(0,newvalue)
         reducedvalue = reducedvalue >> 8
     return returnlst
 
@@ -116,9 +116,39 @@ def send_request(q_message: bytearray, q_server: str) -> bytes:
 
 def parse_response(resp_bytes: bytes):
     '''Parse server response'''
+    for item in resp_bytes:
+        print(item)
+    print("HEADER:")
+    header = resp_bytes[0:12]
+
+    num_answers = bytes_to_val(resp_bytes[6:8])
+    print(num_answers)
     domain_ttl_addr = []
     answers = []
     overindex = 12
+    enddomain = False
+
+    while (not enddomain):
+        place = overindex
+        domain_names = []
+        if place == 12:
+            while resp_bytes[place]!=0:
+                print("place: ",place)
+                for j in range(1,resp_bytes[place]+1):
+                    domain_chr = chr(bytes_to_val([resp_bytes[place+j]]))
+                    domain_names.append(domain_chr)
+                place += resp_bytes[place] + 1
+                print("PLACEHERE", place)
+                if resp_bytes[place+1] != 0:
+                    domain_names.append(".")
+                if resp_bytes[place+1] == 0:
+                    enddomain = True
+                    overindex = place
+    domain_ttl_addr.append("".join(domain_names))
+    print("HERE117")
+    print(domain_ttl_addr)
+    print(overindex)
+    '''
     while overindex < len(resp_bytes):
         place = overindex
         domain_names = []
@@ -134,6 +164,8 @@ def parse_response(resp_bytes: bytes):
             domain_ttl_addr.append("".join(domain_names))
             overindex = place
             print(domain_ttl_addr)
+    '''
+    '''
         else:
             if resp_bytes[place] == 0 or resp_bytes[place] ==1:
                 overindex +1
@@ -149,6 +181,7 @@ def parse_response(resp_bytes: bytes):
                 overindex = place
                 print(answerlst)
                 answers.append(answerlst)
+    '''
     print(answers)
 
     print("RESPONSE END")
@@ -168,6 +201,11 @@ def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
 
 def resolve(query: str) -> None:
     '''Resolve the query'''
+    print(bytes_to_val([6, 145, 94]) == 430430)
+    print(val_to_2_bytes(43043) == [168, 35])
+    print(val_to_n_bytes(430430, 3) == [6, 145, 94])
+    print(get_2_bits([200, 100]) == 3)
+    print(get_offset([200, 100]) == 2148)
     q_type, q_domain, q_server = parse_cli_query(*query[0])
     print(q_type,q_domain,q_server)
     query_bytes = format_query(q_type, q_domain)
