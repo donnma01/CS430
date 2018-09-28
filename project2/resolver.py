@@ -104,7 +104,7 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
         thearray.append(1)
     if q_type == "AAAA":
         thearray.append(0)
-        thearray + bytearray(b'\x1c')
+        thearray.append(28)
     thearray.append(0)
     thearray.append(1)
 
@@ -133,6 +133,16 @@ def parse_response(resp_bytes: bytes):
     overindex = 12
     enddomain = False
 
+    while(not enddomain):
+        place = overindex
+        if place == 12:
+            while resp_bytes[place]!=0:
+                place+=resp_bytes[place] +1
+                if resp_bytes[place+1] == 0:
+                    enddomain = True
+                    overindex = place
+
+    '''
     while (not enddomain):
         place = overindex
         domain_names = []
@@ -150,14 +160,20 @@ def parse_response(resp_bytes: bytes):
                     enddomain = True
                     overindex = place
     domain_ttl_addr.append("".join(domain_names))
+    '''
     print("HERE117")
     print(domain_ttl_addr)
     print(overindex)
     overindex+=5
     print(get_2_bits(resp_bytes[overindex:overindex+1])==3)
+    parse_answers(resp_bytes,overindex,bytes_to_val(resp_bytes[6:8]))
+    '''
     if get_2_bits(resp_bytes[overindex:overindex+1])==3: #if c00c:
         print("HEREEEEE")
+        #go back to beginning
         parse_answers(resp_bytes,overindex,bytes_to_val(resp_bytes[6:8]))
+        #else domain is right there
+    '''
 
     print(resp_bytes[overindex:overindex+2])
     print(get_2_bits(resp_bytes[overindex:overindex+1]))
@@ -173,18 +189,26 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     answers = []
     for i in range(rr_ans):
         cooc = resp_bytes[cplace:cplace+2]
+        print("C00C", cooc)
         cplace+=2
         tpe = bytes_to_val(resp_bytes[cplace:cplace+2])
+        print("tpe", tpe)
         cplace+=2
         cs = bytes_to_val(resp_bytes[cplace:cplace+2])
+        print("cplace", cs)
         cplace+=2
         ttl = bytes_to_val(resp_bytes[cplace:cplace+4])
+        print("ttl", ttl)
         cplace+=4
         addlen = bytes_to_val(resp_bytes[cplace:cplace+2])
+        print("addlen", addlen)
         cplace+=2
         addr = resp_bytes[cplace:cplace+4]
+        #print(tpe ==1)
         if tpe == 1:
+            #print("over there")
             address = parse_address_a(addlen,addr)
+            print(address)
         cplace+=4
         answers.append((tpe,ttl,addlen,address))
     print(answers)
