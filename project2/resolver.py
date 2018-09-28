@@ -33,31 +33,73 @@ PUBLIC_DNS_SERVER = [
 
 def val_to_2_bytes(value: int) -> list:
     '''Split a value into 2 bytes'''
-    raise NotImplementedError
+    '''Return a list of 2 integers'''
+    val_left = value >> 8
+    val_right = value & 0xFF
+    return[val_left,val_right]
 
 def val_to_n_bytes(value: int, n_bytes: int) -> list:
     '''Split a value into n bytes'''
-    raise NotImplementedError
+    #use loop, extract bits, put into list each time
+    #push left 7 times for loop range(n_bytes)
+    reducedvalue = value
+    returnlst = []
+    for i in range(n_bytes):
+        newvalue = reducedvalue & 0xFF
+        returnlist.insert(0,newvalue)
+        reducedvalue = reducedvalue >> 8
+    return returnlst
 
 def bytes_to_val(bytes_lst: list) -> int:
     '''Merge 2 bytes into a value'''
-    raise NotImplementedError
+    val = 0
+    shift = 0
+    unshifted = []
+    for i in range(len(bytes_lst)-1,-1,-1):
+        unshifted.append(bytes_lst[i]<<shift)
+        shift+=8
+    for i in range(len(unshifted)):
+        val += unshifted[i]
+    return val
 
 def get_2_bits(bytes_lst: list) -> int:
     '''Extract first two bits of a two-byte sequence'''
-    raise NotImplementedError
+    return bytes_lst[0]>>6
 
 def get_offset(bytes_lst: list) -> int:
     '''Extract size of the offset from a two-byte sequence'''
-    raise NotImplementedError
+    return((bytes_lst[0] & 0x3f) << 8) + bytes_lst[1]
 
 def parse_cli_query(filename, q_type, q_domain, q_server=None) -> tuple:
     '''Parse command-line query'''
-    raise NotImplementedError
+    return q_type,q_domain,q_server
 
 def format_query(q_type: int, q_domain: list) -> bytearray:
     '''Format DNS query'''
-    raise NotImplementedError
+    randomnum = randint(0,65535)
+    twobytes = val_to_2_bytes(randomnum)
+    thearray = bytearray()
+    thearray.append(twobytes[0])
+    thearray.append(twobytes[1])
+    domains = q_domain.split('.')
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(1)
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(0)
+    for domain in domains:
+        thearray.append(len(domain))
+        thearray.extend(bytearray(domain,'utf-8'))
+    thearray.append(0)
+    thearray.append(0)
+    thearray.append(1)
+    thearray.append(0)
+    thearray.append(1)
 
 def send_request(q_message: bytearray, q_server: str) -> bytes:
     '''Contact the server'''
@@ -70,7 +112,43 @@ def send_request(q_message: bytearray, q_server: str) -> bytes:
 
 def parse_response(resp_bytes: bytes):
     '''Parse server response'''
-    raise NotImplementedError
+    domain_ttl_addr = []
+    answers = []
+    overindex = 12
+    while overindex < len(resp_bytes):
+        place = overindex
+        domain_names = []
+        if place == 12:
+            while resp_bytes[place]!=0:
+                print("place: ",place)
+                for j in range(1,resp_bytes[place]+1):
+                    domain_chr = chr(bytes_to_val([resp_bytes[place+j]]))
+                    domain_names.append(domain_chr)
+                place += resp_bytes[place] + 1
+                if resp_bytes[place+1] != 0:
+                    domain_names.append(".")
+            domain_ttl_addr.append("".join(domain_names))
+            overindex = place
+            print(domain_ttl_addr)
+        else:
+            if resp_bytes[place] == 0 or resp_bytes[place] ==1:
+                overindex +1
+            if resp_bytes[place] == 192:
+                print(resp_bytes[place])
+                print("HERE55!")
+                answerlst = []
+                place += 1
+                while resp_bytes[place] != 192 and place < len(resp_bytes):
+                    print(resp_bytes[place])
+                    answerlst.append(resp_bytes[place])
+                    place+=1
+                overindex = place
+                print(answerlst)
+                answers.append(answerlst)
+    print(answers)
+
+    print("RESPONSE END")
+
 
 def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     '''Parse DNS server answers'''
