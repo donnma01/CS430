@@ -77,7 +77,7 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     raise NotImplementedError
 
 def parse_address_a(addr_len: int, addr_bytes: bytes) -> str:
-    '''Extract IPv4 address'''
+    '''Extract IPv4 addressd'''
     raise NotImplementedError
 
 def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
