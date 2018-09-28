@@ -76,6 +76,7 @@ def parse_cli_query(filename, q_type, q_domain, q_server=None) -> tuple:
 
 def format_query(q_type: int, q_domain: list) -> bytearray:
     '''Format DNS query'''
+    print("QUERY TYPE", q_type)
     randomnum = randint(0,65535)
     twobytes = val_to_2_bytes(randomnum)
     thearray = bytearray()
@@ -98,8 +99,12 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
         thearray.append(len(domain))
         thearray.extend(bytearray(domain,'utf-8'))
     thearray.append(0)
-    thearray.append(0)
-    thearray.append(1)
+    if q_type == "A":
+        thearray.append(0)
+        thearray.append(1)
+    if q_type == "AAAA":
+        thearray.append(0)
+        thearray + bytearray(b'\x1c')
     thearray.append(0)
     thearray.append(1)
 
@@ -148,40 +153,15 @@ def parse_response(resp_bytes: bytes):
     print("HERE117")
     print(domain_ttl_addr)
     print(overindex)
-    '''
-    while overindex < len(resp_bytes):
-        place = overindex
-        domain_names = []
-        if place == 12:
-            while resp_bytes[place]!=0:
-                print("place: ",place)
-                for j in range(1,resp_bytes[place]+1):
-                    domain_chr = chr(bytes_to_val([resp_bytes[place+j]]))
-                    domain_names.append(domain_chr)
-                place += resp_bytes[place] + 1
-                if resp_bytes[place+1] != 0:
-                    domain_names.append(".")
-            domain_ttl_addr.append("".join(domain_names))
-            overindex = place
-            print(domain_ttl_addr)
-    '''
-    '''
-        else:
-            if resp_bytes[place] == 0 or resp_bytes[place] ==1:
-                overindex +1
-            if resp_bytes[place] == 192:
-                print(resp_bytes[place])
-                print("HERE55!")
-                answerlst = []
-                place += 1
-                while resp_bytes[place] != 192 and place < len(resp_bytes):
-                    print(resp_bytes[place])
-                    answerlst.append(resp_bytes[place])
-                    place+=1
-                overindex = place
-                print(answerlst)
-                answers.append(answerlst)
-    '''
+    overindex+=5
+    print(get_2_bits(resp_bytes[overindex:overindex+1])==3)
+    if get_2_bits(resp_bytes[overindex:overindex+1])==3: #if c00c:
+        print("HEREEEEE")
+        parse_answers(resp_bytes,overindex,bytes_to_val(resp_bytes[6:8]))
+
+    print(resp_bytes[overindex:overindex+2])
+    print(get_2_bits(resp_bytes[overindex:overindex+1]))
+
     print(answers)
 
     print("RESPONSE END")
@@ -189,11 +169,38 @@ def parse_response(resp_bytes: bytes):
 
 def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     '''Parse DNS server answers'''
-    raise NotImplementedError
+    cplace = offset
+    answers = []
+    for i in range(rr_ans):
+        cooc = resp_bytes[cplace:cplace+2]
+        cplace+=2
+        tpe = bytes_to_val(resp_bytes[cplace:cplace+2])
+        cplace+=2
+        cs = bytes_to_val(resp_bytes[cplace:cplace+2])
+        cplace+=2
+        ttl = bytes_to_val(resp_bytes[cplace:cplace+4])
+        cplace+=4
+        addlen = bytes_to_val(resp_bytes[cplace:cplace+2])
+        cplace+=2
+        addr = resp_bytes[cplace:cplace+4]
+        if tpe == 1:
+            address = parse_address_a(addlen,addr)
+        cplace+=4
+        answers.append((tpe,ttl,addlen,address))
+    print(answers)
+
 
 def parse_address_a(addr_len: int, addr_bytes: bytes) -> str:
     '''Extract IPv4 addressd'''
-    raise NotImplementedError
+    IPstring = ""
+    for i in range(addr_len):
+        if i == (addr_len)-1:
+            IPstring+=str(addr_bytes[i])
+        else:
+            IPstring += str(addr_bytes[i]) + "."
+    #print(IPstring)
+    return IPstring
+
 
 def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
     '''Extract IPv6 address'''
