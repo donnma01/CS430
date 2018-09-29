@@ -166,7 +166,7 @@ def parse_response(resp_bytes: bytes):
     print(overindex)
     overindex+=5
     print(get_2_bits(resp_bytes[overindex:overindex+1])==3)
-    parse_answers(resp_bytes,overindex,bytes_to_val(resp_bytes[6:8]))
+    parse_answers(resp_bytes,overindex,num_answers)
     '''
     if get_2_bits(resp_bytes[overindex:overindex+1])==3: #if c00c:
         print("HEREEEEE")
@@ -186,18 +186,42 @@ def parse_response(resp_bytes: bytes):
 def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     '''Parse DNS server answers'''
     cplace = offset
-    if get_2_bits(resp_bytes[cplace:cplace+1])==3:
-        #keep track of where the reference was
-        cplace = get_offset([cplace:cplace+1])
-        while resp_bytes[cplace] != 0:
-            for j in range(1,resp_bytes[place]+1)
-
+    oldcplace = offset
 
     answers = []
     for i in range(rr_ans):
-        cooc = resp_bytes[cplace:cplace+2]
-        print("C00C", cooc)
-        cplace+=2
+        #cooc = resp_bytes[cplace:cplace+2]
+        #print("C00C", cooc)
+        domain_name = []
+        if get_2_bits(resp_bytes[cplace:cplace+1])==3:
+            print("HERE555")
+            #keep track of where the reference was
+            oldcplace = cplace
+            cplace = get_offset(resp_bytes[cplace:cplace+2])
+            print(cplace)
+            dn = []
+            while resp_bytes[cplace] != 0:
+                for j in range(1,resp_bytes[cplace]+1):
+                    domain_chr = chr(bytes_to_val([resp_bytes[cplace+j]]))
+                    dn.append(domain_chr)
+                cplace += resp_bytes[cplace]+1
+                if resp_bytes[cplace+1] != 0:
+                    dn.append(".")
+            domain_name.append("".join(dn))
+            print(domain_name)
+            cplace = oldcplace
+            cplace+=2
+        else:
+            while resp_bytes[cplace] != 0:
+                for j in range(1,resp_bytes[cplace]+1):
+                    domain_chr = chr(bytes_to_val([resp_bytes[cplace+j]]))
+                    dn.append(domain_chr)
+                cplace += resp_bytes[cplace]+1
+                if resp_bytes[cplace+1] != 0:
+                    dn.append(".")   
+            domain_name.append("".join(dn))
+            print(domain_name)
+            cplace+=2 #skip 0
         tpe = bytes_to_val(resp_bytes[cplace:cplace+2])
         print("tpe", tpe)
         cplace+=2
@@ -217,8 +241,9 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
             address = parse_address_a(addlen,addr)
             print(address)
         cplace+=4
-        answers.append((tpe,ttl,addlen,address))
+        answers.append((domain_name,tpe,ttl,addlen,address))
     print(answers)
+    return answers
 
 
 def parse_address_a(addr_len: int, addr_bytes: bytes) -> str:
