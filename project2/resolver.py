@@ -141,46 +141,12 @@ def parse_response(resp_bytes: bytes):
                 if resp_bytes[place+1] == 0:
                     enddomain = True
                     overindex = place
-
-    '''
-    while (not enddomain):
-        place = overindex
-        domain_names = []
-        if place == 12:
-            while resp_bytes[place]!=0:
-                print("place: ",place)
-                for j in range(1,resp_bytes[place]+1):
-                    domain_chr = chr(bytes_to_val([resp_bytes[place+j]]))
-                    domain_names.append(domain_chr)
-                place += resp_bytes[place] + 1
-                print("PLACEHERE", place)
-                if resp_bytes[place+1] != 0:
-                    domain_names.append(".")
-                if resp_bytes[place+1] == 0:
-                    enddomain = True
-                    overindex = place
-    domain_ttl_addr.append("".join(domain_names))
-    '''
     print("HERE117")
     print(domain_ttl_addr)
     print(overindex)
     overindex+=5
     print(get_2_bits(resp_bytes[overindex:overindex+1])==3)
-    parse_answers(resp_bytes,overindex,num_answers)
-    '''
-    if get_2_bits(resp_bytes[overindex:overindex+1])==3: #if c00c:
-        print("HEREEEEE")
-        #go back to beginning
-        parse_answers(resp_bytes,overindex,bytes_to_val(resp_bytes[6:8]))
-        #else domain is right there
-    '''
-
-    print(resp_bytes[overindex:overindex+2])
-    print(get_2_bits(resp_bytes[overindex:overindex+1]))
-
-    print(answers)
-
-    print("RESPONSE END")
+    return parse_answers(resp_bytes,overindex,num_answers)
 
 
 def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
@@ -212,6 +178,7 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
             cplace = oldcplace
             cplace+=2
         else:
+            dn = []
             while resp_bytes[cplace] != 0:
                 for j in range(1,resp_bytes[cplace]+1):
                     domain_chr = chr(bytes_to_val([resp_bytes[cplace+j]]))
@@ -233,14 +200,22 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
         cplace+=4
         addlen = bytes_to_val(resp_bytes[cplace:cplace+2])
         print("addlen", addlen)
-        cplace+=2
-        addr = resp_bytes[cplace:cplace+4]
+        cplace+=2        
         #print(tpe ==1)
         if tpe == 1:
+            addr = resp_bytes[cplace:cplace+4]
             #print("over there")
             address = parse_address_a(addlen,addr)
             print(address)
-        cplace+=4
+            cplace+=4
+        if tpe == 28:
+            addr = resp_bytes[cplace:cplace+16]
+            print("RACHEL")
+            print(addlen)
+            print(addr)
+            address = parse_address_aaaa(addlen,addr)
+            cplace+= 16
+        
         answers.append((domain_name,tpe,ttl,addlen,address))
     print(answers)
     return answers
@@ -260,7 +235,12 @@ def parse_address_a(addr_len: int, addr_bytes: bytes) -> str:
 
 def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
     '''Extract IPv6 address'''
-    raise NotImplementedError
+    print("IP v6 start")
+    IPstring = ""
+    for i in range(addr_len):
+        print(addr_bytes[i])
+    print(IPstring)
+    print("IP v6 end")
 
 def resolve(query: str) -> None:
     '''Resolve the query'''
