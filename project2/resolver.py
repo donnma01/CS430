@@ -93,11 +93,11 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
     twobytes = val_to_2_bytes(randomnum)
     print(twobytes)
     thearray = bytearray()
-    '''
+    
     thearray.append(twobytes[0])
     thearray.append(twobytes[1])
-    '''
-    print('{:04x}'.format(bytearray(twobytes)))
+    
+    #print('{:04x}'.format(bytearray(twobytes)))
     thearray.append(1)
     thearray.append(0)
     thearray.append(0)
@@ -245,15 +245,24 @@ def parse_address_a(addr_len: int, addr_bytes: bytes) -> str:
 def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
     '''Extract IPv6 address'''
     '''
-    print("IP v6 start")
-    IPstring = ""
     for i in range(addr_len):
-        print(addr_bytes[i])
-    print(IPstring)
-    print("IP v6 end")
+        print(str(hex(addr_bytes[i])))
     '''
-    raise NotImplementedError
+    addrlst = addr_bytes.hex()
+    theaddr = []
+    for i in range(0,32,4):
+        twobytes = addrlst[i:i+4]
+        #if twobytes == '0000':
+            #theaddr.append('0')
+        while twobytes.startswith('0') and len(twobytes)!=1:
+            twobytes = twobytes[1:]
+        theaddr.append(twobytes)
+        
+        
+    addans = ':'.join(theaddr)
+    return addans
 
+    
 def resolve(query: str) -> None:
     '''Resolve the query'''
     #print(bytes_to_val([42]))
