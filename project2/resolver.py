@@ -91,7 +91,7 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
     #print("QUERY TYPE", q_type)
     randomnum = randint(0,65535)
     twobytes = val_to_2_bytes(randomnum)
-    print(twobytes)
+    #print(twobytes)
     thearray = bytearray()
     
     thearray.append(twobytes[0])
