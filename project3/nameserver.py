@@ -33,22 +33,39 @@ TTL_SEC = {
 
 def val_to_bytes(value: int, n_bytes: int) -> list:
     '''Split a value into n bytes'''
-    raise NotImplementedError
+    reducedvalue = value
+    returnlst = []
+    for i in range(n_bytes):
+        newvalue = reducedvalue & 0xFF
+        returnlst.insert(0,newvalue)
+        reducedvalue = reducedvalue >> 8
+    return returnlst
 
 
 def bytes_to_val(bytes_lst: list) -> int:
     '''Merge n bytes into a value'''
-    raise NotImplementedError
+    val = 0
+    shift = 0
+    unshifted = []
+    for i in range(len(bytes_lst)-1,-1,-1):
+        unshifted.append(bytes_lst[i]<<shift)
+        shift+=8
+    for i in range(len(unshifted)):
+        val += unshifted[i]
+    return val
 
 
 def get_left_bits(bytes_lst: list, n_bits: int) -> int:
     '''Extract left n bits of a two-byte sequence'''
-    raise NotImplementedError
+    val = bytes_to_val(bytes_lst)
+    #print(val)
+    return val >> 16-n_bits
 
 
 def get_right_bits(bytes_lst: list, n_bits) -> int:
-    '''Extract right n bits bits of a two-byte sequence'''
-    raise NotImplementedError
+    '''Extract right n bits of a two-byte sequence'''
+    val = bytes_to_val(bytes_lst)
+    return val & (2**n_bits)-1
 
 
 def read_zone_file(filename: str) -> tuple:
@@ -56,14 +73,44 @@ def read_zone_file(filename: str) -> tuple:
     zone = dict()
     with open(filename) as zone_file:
         origin = zone_file.readline().split()[1].rstrip('.')
-        raise NotImplementedError
+        ottl = zone_file.readline().split()[1].rstrip('.')
+        zoneline = zone_file.readline()
+        domain = ""
+
+        while zoneline != "":
+            bzoneline = zoneline.split()
+            if len(bzoneline) == 5:
+                domain = bzoneline[0]
+                ttl = bzoneline[1]
+                clas = bzoneline[2]
+                typ = bzoneline[3]
+                addr = bzoneline[4]
+                zone[domain] = [(ttl, clas, typ, addr)]
+            if len(bzoneline) == 4 and bzoneline[0].startswith("1"):
+                ttl = bzoneline[0]
+                clas = bzoneline[1]
+                typ = bzoneline[2]
+                addr = bzoneline[3]
+                zone[domain].append((ttl,clas,typ,addr))
+            if len(bzoneline) == 4 and not(bzoneline[0].startswith("1")):
+                domain = bzoneline[0]
+                clas = bzoneline[1]
+                typ = bzoneline[2]
+                addr = bzoneline[3]
+                zone[domain] = [(ottl,clas,typ,addr)]
+            if len(bzoneline) == 3:
+                clas = bzoneline[0]
+                typ = bzoneline[1]
+                addr = bzoneline[2]
+                zone[domain].append((ottl,clas,typ,addr))
+            zoneline = zone_file.readline()
     
     return (origin, zone)
 
 
 def parse_request(origin: str, msg_req: bytes) -> tuple:
     '''Parse the request'''
-    raise NotImplementedError
+    print(mes_req)
 
 
 def format_response(zone: dict, trans_id: int, qry_name: str, qry_type: int, qry: bytearray) -> bytearray:
