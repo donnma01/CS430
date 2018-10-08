@@ -110,7 +110,41 @@ def read_zone_file(filename: str) -> tuple:
 
 def parse_request(origin: str, msg_req: bytes) -> tuple:
     '''Parse the request'''
-    print(mes_req)
+    transid = bytes_to_val(msg_req[0:2])
+    domain = []
+    overindex = 12
+    enddomain = False
+    novidx = 0
+
+
+
+    while not enddomain:
+        place = overindex
+        if place == 12:
+            dn = []
+            while msg_req[place]!=0:
+                for j in range(1,msg_req[place]+1):
+                    domain_chr = chr(bytes_to_val([msg_req[place+j]]))
+                    dn.append(domain_chr)
+                place+=msg_req[place]+1
+                if msg_req[place+1] != 0:
+                    dn.append(".")
+                if msg_req[place+1] == 0:
+                    novidx = place+1 #watch out for this.
+                    enddomain = True
+            domain.append("".join(dn))
+    querytype = bytes_to_val(msg_req[novidx:novidx+2]) #watch out for this.
+    query = msg_req[overindex:(novidx+5)]
+
+    if querytype not in DNS_TYPES:
+        raise ValueError("Unknown query type")
+    if query[len(query)-2:len(query)] != bytearray(b'\x00\x01'):
+        raise ValueError("Unknown class")
+    if origin != domain[0].replace(domain[0].split(".")[0]+".",''):
+        raise ValueError("Unknown zone")
+
+    request = (transid,domain[0].replace(origin,'').strip("."),querytype,query)
+    return request
 
 
 def format_response(zone: dict, trans_id: int, qry_name: str, qry_type: int, qry: bytearray) -> bytearray:
