@@ -5,7 +5,7 @@ from random import randint, choice, seed
 from socket import socket, SOCK_DGRAM, AF_INET
 
 HOST = 'localhost'
-PORT = 43053
+PORT = 43054
 
 DNS_TYPES = {
     'A': 1,

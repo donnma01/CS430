@@ -9,7 +9,7 @@ from socket import socket, SOCK_DGRAM, AF_INET
 
 
 HOST = "localhost"
-PORT = 43053
+PORT = 43054
 
 DNS_TYPES = {
     1: 'A',
@@ -173,9 +173,45 @@ def format_response(zone: dict, trans_id: int, qry_name: str, qry_type: int, qry
     response.append(answerRRs[1])
     response.extend(bytearray(b'\x00\x00\x00\x00'))
     response.extend(qry)
-    print(response)
     for answer in records:
         response.extend(bytearray(b'\xc0\x0c'))
+        qrytpe = val_to_bytes(qry_type,2)
+        response.append(qrytpe[0])
+        response.append(qrytpe[1])
+        response.extend(bytearray(b'\x00\x01'))
+        ttl = val_to_bytes(TTL_SEC[answer[0]],4)
+        response.append(ttl[0])
+        response.append(ttl[1])
+        response.append(ttl[2])
+        response.append(ttl[3])
+        if answer[2] == 'A':
+            dlen = len(answer[3].split("."))
+            dlenans = val_to_bytes(dlen,2)
+            response.append(dlenans[0])
+            response.append(dlenans[1])
+            daddr = answer[3].split(".")
+            response.append(int(daddr[0]))
+            response.append(int(daddr[1]))
+            response.append(int(daddr[2]))
+            response.append(int(daddr[3]))
+
+        if answer[2] == 'AAAA':
+            dlen = len(answer[3].split(":"))
+            dlenans = val_to_bytes(dlen,2)
+            response.append(0)
+            response.append(16)
+            daddr = answer[3].split(":")
+            for item in daddr:
+                while len(item) < 4:
+                    item = "0" + item
+                lh = int("0x"+item[0:2],16)
+                rh = int("0x"+item[2:],16)
+                response.append(lh)
+                response.append(rh)
+
+
+    print(response)
+    return response
 
 
 def run(filename: str) -> None:
