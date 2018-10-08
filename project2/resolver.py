@@ -265,12 +265,6 @@ def parse_address_aaaa(addr_len: int, addr_bytes: bytes) -> str:
     
 def resolve(query: str) -> None:
     '''Resolve the query'''
-    #print(bytes_to_val([42]))
-    #print(bytes_to_val([6, 145, 94]) == 430430)
-    #print(val_to_2_bytes(43043) == [168, 35])
-    #print(val_to_n_bytes(430430, 3) == [6, 145, 94])
-    #print(get_2_bits([200, 100]) == 3)
-    #print(get_offset([200, 100]) == 2148)
     q_type, q_domain, q_server = parse_cli_query(*query[0])
     #print(q_type,q_domain,q_server)
     query_bytes = format_query(q_type, q_domain)
