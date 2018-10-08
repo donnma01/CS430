@@ -111,10 +111,13 @@ def read_zone_file(filename: str) -> tuple:
 def parse_request(origin: str, msg_req: bytes) -> tuple:
     '''Parse the request'''
     transid = bytes_to_val(msg_req[0:2])
+    print(msg_req[0:2])
+    print(transid)
     domain = []
     overindex = 12
     enddomain = False
     novidx = 0
+    print(msg_req)
 
 
 
@@ -144,12 +147,35 @@ def parse_request(origin: str, msg_req: bytes) -> tuple:
         raise ValueError("Unknown zone")
 
     request = (transid,domain[0].replace(origin,'').strip("."),querytype,query)
+    print(request)
     return request
 
 
 def format_response(zone: dict, trans_id: int, qry_name: str, qry_type: int, qry: bytearray) -> bytearray:
     '''Format the response'''
-    raise NotImplementedError
+    response = bytearray()
+    transid = val_to_bytes(trans_id,2)
+    print(transid)
+    response.append(transid[0])
+    response.append(transid[1])
+    print(response)
+    response.extend(bytearray(b'\x81\x00\x00\x01'))
+    #number of answers depends on what you find from the zone
+    thezone = zone[qry_name]
+    print(thezone)
+    records = []
+    for record in thezone:
+        if record[2] == DNS_TYPES[qry_type]:
+            records.append(record)
+    print(records)
+    answerRRs = val_to_bytes(len(records),2)
+    response.append(answerRRs[0])
+    response.append(answerRRs[1])
+    response.extend(bytearray(b'\x00\x00\x00\x00'))
+    response.extend(qry)
+    print(response)
+    for answer in records:
+        response.extend(bytearray(b'\xc0\x0c'))
 
 
 def run(filename: str) -> None:
