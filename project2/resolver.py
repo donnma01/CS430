@@ -66,7 +66,7 @@ def get_2_bits(bytes_lst: list) -> int:
     '''Extract first two bits of a two-byte sequence'''
     return bytes_lst[0]>>6
 
-def get_offset(bytes_lst: list) -> int:
+def get_domain_name_location(bytes_lst: list) -> int:
     '''Extract size of the offset from a two-byte sequence'''
     return((bytes_lst[0] & 0x3f) << 8) + bytes_lst[1]
 
@@ -90,12 +90,12 @@ def format_query(q_type: int, q_domain: list) -> bytearray:
     '''Format DNS query'''
     #print("QUERY TYPE", q_type)
     randomnum = randint(0,65535)
-    twobytes = val_to_2_bytes(randomnum)
+    #twobytes = val_to_2_bytes(randomnum)
     #print(twobytes)
     thearray = bytearray()
     
-    thearray.append(twobytes[0])
-    thearray.append(twobytes[1])
+    thearray.append(79) #0
+    thearray.append(66) #B
     
     #print('{:04x}'.format(bytearray(twobytes)))
     thearray.append(1)
@@ -132,6 +132,7 @@ def send_request(q_message: bytearray, q_server: str) -> bytes:
 
 def parse_response(resp_bytes: bytes):
     '''Parse server response'''
+    #print(get_domain_name_location([200, 100]) == 2148)
     #print("HEADER:")
     header = resp_bytes[0:12]
 
@@ -160,19 +161,20 @@ def parse_response(resp_bytes: bytes):
 
 def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     '''Parse DNS server answers'''
+    #print(offset)
     cplace = offset
     oldcplace = offset
 
     answers = []
     for i in range(rr_ans):
-        #cooc = resp_bytes[cplace:cplace+2]
+        cooc = resp_bytes[cplace:cplace+2]
         #print("C00C", cooc)
         domain_name = []
         if get_2_bits(resp_bytes[cplace:cplace+1])==3:
             #print("HERE555")
             #keep track of where the reference was
             oldcplace = cplace
-            cplace = get_offset(resp_bytes[cplace:cplace+2])
+            cplace = get_domain_name_location(resp_bytes[cplace:cplace+2])
             #print(cplace)
             dn = []
             while resp_bytes[cplace] != 0:
@@ -217,7 +219,7 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
             address = parse_address_a(addlen,addr)
             #print(address)
             cplace+=4
-        if tpe == 28:
+        else:#if tpe == 28:
             addr = resp_bytes[cplace:cplace+16]
             #print("RACHEL")
             #print(addlen)

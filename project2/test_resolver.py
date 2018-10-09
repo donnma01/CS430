@@ -10,7 +10,7 @@ from resolver import val_to_2_bytes
 from resolver import val_to_n_bytes
 from resolver import bytes_to_val
 from resolver import get_2_bits
-from resolver import get_domain_name_location
+#from resolver import get_domain_name_location
 from resolver import parse_cli_query
 from resolver import format_query
 from resolver import parse_response
@@ -42,6 +42,7 @@ class TestResolver:
     def test_get_2_bits(self):
         '''Get 2 bits'''
         assert get_2_bits([200, 100]) == 3
+
 
     def test_get_domain_name_location(self):
         '''Get domain name location'''
