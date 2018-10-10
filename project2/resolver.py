@@ -165,12 +165,17 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
     cplace = offset
     oldcplace = offset
 
+    #print(resp_bytes[offset])
+    #print(resp_bytes[offset+1])
+
     answers = []
-    for i in range(rr_ans):
-        cooc = resp_bytes[cplace:cplace+2]
-        #print("C00C", cooc)
-        domain_name = []
-        if get_2_bits(resp_bytes[cplace:cplace+1])==3:
+
+    if get_2_bits(resp_bytes[cplace:cplace+1])==3:
+        #print("HERE1")
+        for i in range(rr_ans):
+            cooc = resp_bytes[cplace:cplace+2]
+            #print("C00C", cooc)
+            domain_name = []
             #print("HERE555")
             #keep track of where the reference was
             oldcplace = cplace
@@ -188,46 +193,78 @@ def parse_answers(resp_bytes: bytes, offset: int, rr_ans: int) -> list:
             #print(domain_name)
             cplace = oldcplace
             cplace+=2
-        else:
+            tpe = bytes_to_val(resp_bytes[cplace:cplace+2])
+            #print("tpe", tpe)
+            cplace+=2
+            cs = bytes_to_val(resp_bytes[cplace:cplace+2])
+            #print("cplace", cs)
+            cplace+=2
+            ttl = bytes_to_val(resp_bytes[cplace:cplace+4])
+            #print("ttl", ttl)
+            cplace+=4
+            addlen = bytes_to_val(resp_bytes[cplace:cplace+2])
+            #print("addlen", addlen)
+            cplace+=2        
+            #print(tpe ==1)
+            if tpe == 1:
+                addr = resp_bytes[cplace:cplace+4]
+                #print("over there")
+                address = parse_address_a(addlen,addr)
+                #print(address)
+                cplace+=4
+            else:#if tpe == 28:
+                addr = resp_bytes[cplace:cplace+16]
+                #print("RACHEL")
+                #print(addlen)
+                #print(addr)
+                address = parse_address_aaaa(addlen,addr)
+                cplace+= 16
+            answers.append((domain_name[0],ttl,address))
+
+    else:
+        for i in range(rr_ans):
+            #print("HERE")
+            domain_name = []
             dn = []
             while resp_bytes[cplace] != 0:
                 for j in range(1,resp_bytes[cplace]+1):
                     domain_chr = chr(bytes_to_val([resp_bytes[cplace+j]]))
                     dn.append(domain_chr)
+                    #print(domain_chr)
                 cplace += resp_bytes[cplace]+1
                 if resp_bytes[cplace+1] != 0:
-                    dn.append(".")   
+                    dn.append(".")
+                #print(dn)   
             domain_name.append("".join(dn))
             #print(domain_name)
-            cplace+=2 #skip 0
-        tpe = bytes_to_val(resp_bytes[cplace:cplace+2])
-        #print("tpe", tpe)
-        cplace+=2
-        cs = bytes_to_val(resp_bytes[cplace:cplace+2])
-        #print("cplace", cs)
-        cplace+=2
-        ttl = bytes_to_val(resp_bytes[cplace:cplace+4])
-        #print("ttl", ttl)
-        cplace+=4
-        addlen = bytes_to_val(resp_bytes[cplace:cplace+2])
-        #print("addlen", addlen)
-        cplace+=2        
-        #print(tpe ==1)
-        if tpe == 1:
-            addr = resp_bytes[cplace:cplace+4]
-            #print("over there")
-            address = parse_address_a(addlen,addr)
-            #print(address)
+            cplace+=1 #skip 0
+            tpe = bytes_to_val(resp_bytes[cplace:cplace+2])
+            #print("tpe", tpe)
+            cplace+=2
+            cs = bytes_to_val(resp_bytes[cplace:cplace+2])
+            #print("cplace", cs)
+            cplace+=2
+            ttl = bytes_to_val(resp_bytes[cplace:cplace+4])
+            #print("ttl", ttl)
             cplace+=4
-        else:#if tpe == 28:
-            addr = resp_bytes[cplace:cplace+16]
-            #print("RACHEL")
-            #print(addlen)
-            #print(addr)
-            address = parse_address_aaaa(addlen,addr)
-            cplace+= 16
-        
-        answers.append((domain_name[0],ttl,address))
+            addlen = bytes_to_val(resp_bytes[cplace:cplace+2])
+            #print("addlen", addlen)
+            cplace+=2        
+            #print(tpe ==1)
+            if tpe == 1:
+                addr = resp_bytes[cplace:cplace+4]
+                #print("over there")
+                address = parse_address_a(addlen,addr)
+                #print(address)
+                cplace+=4
+            else:#if tpe == 28:
+                addr = resp_bytes[cplace:cplace+16]
+                #print("RACHEL")
+                #print(addlen)
+                #print(addr)
+                address = parse_address_aaaa(addlen,addr)
+                cplace+= 16
+            answers.append((domain_name[0],ttl,address))
     #print(answers)
     return answers
 
