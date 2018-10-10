@@ -43,7 +43,6 @@ class TestResolver:
         '''Get 2 bits'''
         assert get_2_bits([200, 100]) == 3
 
-
     def test_get_domain_name_location(self):
         '''Get domain name location'''
         assert get_domain_name_location([200, 100]) == 2148
