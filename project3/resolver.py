@@ -244,7 +244,7 @@ def resolve(query: str) -> None:
     '''Resolve the query'''
     #print(bytes_to_val([42]))
     #print(bytes_to_val([6, 145, 94]) == 430430)
-    #print(val_to_2_bytes(43043) == [168, 35])
+    print(val_to_2_bytes(2018))
     #print(val_to_n_bytes(430430, 3) == [6, 145, 94])
     #print(get_2_bits([200, 100]) == 3)
     #print(get_offset([200, 100]) == 2148)
