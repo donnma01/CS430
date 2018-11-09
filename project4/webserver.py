@@ -10,9 +10,54 @@ PORT = 4300  # Open http://127.0.0.2:4300 in a browser
 LOGFILE = "webserver.log"
 
 
+def readFile(filename):
+    fl = open(filename, "r")
+    s = ""
+    for line in fl:
+        s += line
+    fl.close()
+    return s
+
+
+
+def server():
+    '''Main server loop'''
+    with socket(AF_INET,SOCK_STREAM) as s:
+        s.bind((ADDRESS, PORT))
+        s.listen(1)
+        logfile = open("webserver.log", "a")
+        print('Listening on port {}'.format(PORT))
+
+        #read alice file and send it out
+        conn, addr = s.accept()
+        with conn:
+            print("Connected: {}".format(addr[0]))
+            data = conn.recv(1024)
+            request = str(data.decode())
+            time = datetime.now()
+            requestlst = request.strip("\r").split("\n")
+            #print(requestlst)
+            rq, ip, browser = requestlst[0], requestlst[1], requestlst[5]
+            rq = rq[4:len(rq)-10]
+            ip = ip[6:len(ip)-6]
+            browser = browser[12:len(browser)-2]
+            returnitem =  "{} | {} | {} | {}\n".format(time,rq,ip,browser)
+            logfile.write(returnitem)
+            logfile.close()
+            if requestlst[0][:3] != "GET":
+                header = "HTTP/1.1 405 Method Not Allowed"
+            elif requestlst[0][4:len(requestlst[0])-10] != "/alice30.txt":
+                header = "HTTP/1.1 404 Not Found"
+            else:
+                alice = readFile("alice30.txt")
+                header = "HTTP/1.1 200 OK \nContent-Length: {}\nContent-Type: text/plain; charset=utf-8\nDate: {}\nLast-Modified: Wed Aug 29 11:00:00 2018\nServer: CS430-MASON\n{}".format(len(alice),datetime.now(),alice)
+
+            conn.sendall(header.encode())
+
+
 def main():
     """Main loop"""
-    pass
+    server()
 
 
 if __name__ == "__main__":
