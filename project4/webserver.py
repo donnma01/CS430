@@ -36,22 +36,27 @@ def server():
             request = str(data.decode())
             time = datetime.now()
             requestlst = request.strip("\r").split("\n")
-            #print(requestlst)
-            rq, ip, browser = requestlst[0], requestlst[1], requestlst[5]
+            reqdictlst = requestlst[1:]
+            reqdict = {}
+            for element in reqdictlst:
+                el_list = element.split(":",1)
+                if el_list[0] != "\r" and el_list[0] != "":
+                    reqdict[el_list[0]] = el_list[1][1:].strip("\r")
+            rq = requestlst[0]
             rq = rq[4:len(rq)-10]
-            ip = ip[6:len(ip)-6]
-            browser = browser[12:len(browser)-2]
+            ip = reqdict["Host"][:len(reqdict["Host"])-5]
+            browser = reqdict["User-Agent"]
             returnitem =  "{} | {} | {} | {}\n".format(time,rq,ip,browser)
             logfile.write(returnitem)
             logfile.close()
             if requestlst[0][:3] != "GET":
-                header = "HTTP/1.1 405 Method Not Allowed"
+                header = "HTTP/1.1 405 Method Not Allowed\n"
             elif requestlst[0][4:len(requestlst[0])-10] != "/alice30.txt":
-                header = "HTTP/1.1 404 Not Found"
+                header = "HTTP/1.1 404 Not Found\n"
             else:
                 alice = readFile("alice30.txt")
-                header = "HTTP/1.1 200 OK \nContent-Length: {}\nContent-Type: text/plain; charset=utf-8\nDate: {}\nLast-Modified: Wed Aug 29 11:00:00 2018\nServer: CS430-MASON\n{}".format(len(alice),datetime.now(),alice)
-
+                header = "HTTP/1.1 200 OK \nContent-Length: {}\nContent-Type: text/plain; charset=utf-8\nDate: {}\nLast-Modified: Wed Aug 29 11:00:00 2018\nServer: CS430-MASON\n\n{}".format(len(alice),datetime.now(),alice)
+            #print(header)
             conn.sendall(header.encode())
 
 
