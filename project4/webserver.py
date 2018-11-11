@@ -50,12 +50,12 @@ def server():
             logfile.write(returnitem)
             logfile.close()
             if requestlst[0][:3] != "GET":
-                header = "HTTP/1.1 405 Method Not Allowed\n"
+                header = "HTTP/1.1 405 Method Not Allowed\r\n\r\n"
             elif requestlst[0][4:len(requestlst[0])-10] != "/alice30.txt":
-                header = "HTTP/1.1 404 Not Found\n"
+                header = "HTTP/1.1 404 Not Found\r\n\r\n"
             else:
                 alice = readFile("alice30.txt")
-                header = "HTTP/1.1 200 OK \nContent-Length: {}\nContent-Type: text/plain; charset=utf-8\nDate: {}\nLast-Modified: Wed Aug 29 11:00:00 2018\nServer: CS430-MASON\n\n{}".format(len(alice),datetime.now(),alice)
+                header = "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/plain; charset=utf-8\r\nDate: {}\r\nLast-Modified: Wed Aug 29 11:00:00 2018\r\nServer: CS430-MASON\r\n\r\n{}".format(len(alice),datetime.now(),alice)
             #print(header)
             conn.sendall(header.encode())
 
