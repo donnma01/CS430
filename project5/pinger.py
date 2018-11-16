@@ -56,6 +56,18 @@ def checksum(pkt: bytes) -> int:
     return result
 
 
+
+def parse_address_a(addr_len: int, addr_bytes: bytes) -> str:
+    '''Extract IPv4 addressd'''
+    IPstring = ""
+    for i in range(addr_len):
+        if i == (addr_len)-1:
+            IPstring+=str(addr_bytes[i])
+        else:
+            IPstring += str(addr_bytes[i]) + "."
+    #print(IPstring)
+    return IPstring
+
 def parse_reply(
     my_socket: socket.socket, req_id: int, timeout: int, addr_dst: str
 ) -> tuple:
@@ -69,33 +81,38 @@ def parse_reply(
         if what_ready[0] == []:  # Timeout
             raise TimeoutError("Request timed out after 1 sec")
         time_rcvd = time.time()
+        rtt = (time_rcvd - started_select) * 1000
         pkt_rcvd, addr = my_socket.recvfrom(1024)
         if addr[0] != addr_dst:
             raise ValueError(f"Wrong sender: {addr[0]}")
         # Extract ICMP header from the IP packet and parse it
+        plen = len(pkt_rcvd)
+        ICMP_Header = pkt_rcvd[20:36]
+        ICMP_Header_NoChecksum = list(ICMP_Header)
+        ICMP_Header_NoChecksum[2] = 0
+        ICMP_Header_NoChecksum[3] = 0
+        ICMP_Header_NoChecksum = bytes(ICMP_Header_NoChecksum)
+        cksum_new = hex(checksum(ICMP_Header_NoChecksum))[2:]
+        cksum_rec = ICMP_Header[2:4].hex()
+        msg_typ = ICMP_Header[0:1].hex()
+        msg_code = ICMP_Header[1:2].hex()
 
-        ttl = pkt_rcvd[8]
-        print_raw_bytes(pkt_rcvd)
-        ICMP_Header = pkt_rcvd[20:28]
-        '''
-        my_checksum = checksum(header + data)
+        zero_hex = hex(0) + '0'
 
-        if sys.platform == "darwin":
-            my_checksum = socket.htons(my_checksum) & 0xFFFF #what does htons do?
-        else:
-            my_checksum = socket.htons(my_checksum) 
+        if msg_typ != zero_hex[2:]:
+            raise ValueError("Wrong message type")
+        if msg_code != zero_hex[2:]:
+            raise ValueError("Wrong code type")
+        if cksum_rec != cksum_new:
+            raise ValueError("Incorrect checksum")
 
-        checksum
-        '''
-        print_raw_bytes(ICMP_Header)
-        #use timestamp to get round trip time
-
-        #see if checksum is correct
-        # DONE: End of ICMP parsing
+        destination = parse_address_a(len(pkt_rcvd[12:16]), pkt_rcvd[12:16])
+        ttl = int(pkt_rcvd[8:9].hex(),16)
+        seq_num = int(ICMP_Header[6:8].hex(),16)//256
         time_left = time_left - how_long_in_select
         if time_left <= 0:
             raise TimeoutError("Request timed out after 1 sec")
-        return pkt_rcvd
+        return (destination, plen, round(rtt,2), ttl, seq_num)
 
 
 def format_request(req_id: int, seq_num: int) -> bytes:
@@ -142,11 +159,27 @@ def ping(host: str, pkts: int, timeout: int = 1) -> None:
     """Main loop"""
 
     #convert host to IP here and then pass it to everything else?
+    received = 0
     ip = socket.gethostbyname(host)
-    print("--- Ping {} ({}) using Python ---".format(host,ip))
-    for i in range(pkts):
-        req = send_request(ip,i)
-        #print("{} bytes from 196.216.2.6: icmp_seq={} TTL={} time={}".format())
+    timelist = []
+    print("\n--- Ping {} ({}) using Python ---\n".format(host,ip))
+    for i in range(1,pkts+1):
+        try:
+            req = send_request(ip,i)
+            print("{} bytes from {}: icmp_seq={} TTL={} time={} ms".format(req[1], req[0], req[4], req[3], req[2]))
+            received += 1
+            timelist.append(req[2])
+
+        except TimeoutError:
+            print("No response: Request timed out after 1 sec")
+        except:
+            pass
+
+    print("\n--- {} ping statistics ---".format(host))
+    print("{} packets transmitted, {} received, {}% packet loss".format(pkts, received, ((pkts-received)/pkts)*100))
+    if timelist != []:
+        print("rtt min/avg/max/mdev = {}/{}/{}/{} ms".format(min(timelist), round(mean(timelist),2), max(timelist), round(stdev(timelist),2)))
+        
     return
 
 
