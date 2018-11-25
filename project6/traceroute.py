@@ -63,7 +63,8 @@ def parse_reply(packet: bytes) -> bool:
     pseudo_header.extend(icmp_header[0:2])
     pseudo_header.extend(icmp_header[4:])
     check_sum_comptd = checksum(pseudo_header + icmp_data)
-
+    if not what_ready[0]:
+        raise TimeoutError("Request timed out")
     return True
 
 
@@ -80,16 +81,19 @@ def format_request(icmp_type: int, icmp_code: int, req_id: int, seq_num: int) ->
 
     return header + data
 
+def receive_reply(open_socket: socket, timeout: int = 1) -> tuple:
+    
+    
+    return (pkt_rcvd, addr[0])
+
 
 def send_request(packet: bytes, addr_dst: str, ttl: int) -> socket:
     """Send an Echo Request"""
 
     proto = socket.getprotobyname("icmp")
-
-
     my_icmp_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, proto)
-    my_icmp_socket.sendto(packet, (addr_dst, 1))
     my_icmp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TTL, struct.pack("I", ttl))
+    my_icmp_socket.sendto(packet, (addr_dst, 1))
     return my_icmp_socket
 
 
@@ -109,6 +113,8 @@ def traceroute(hostname: str) -> None:
             packet = format_request(ECHO_REQUEST_TYPE, ECHO_REQUEST_CODE, my_id, att)
             my_icmp_socket = send_request(packet, hostname, ttl)
             try:
+                pkt_rcvd, responder = receive_reply(my_icmp_socket, TIMEOUT)
+            except TimeoutError as te:
 
 
 
@@ -133,14 +139,12 @@ def traceroute(hostname: str) -> None:
                 my_icmp_socket.close()
                 parse_reply(pkt_rcvd)
                 parsed_success += 1
-                pkt_rcvd, responder = receive_reply(my_icmp_socket, TIMEOUT)
                 print("{:>5s} {:2s}".format("ERR", " "), end="")
                 print("{:>5s} {:2s}".format("TIME", " "), end="")
                 received_success += 1
                 to_error_msg = str(te)
                 v_error_msg = str(ve)
             break
-            except TimeoutError as te:
             except ValueError as ve:
             f"Incorrect type: {icmp_msg_type}. Expected {', '.join([str(x) for x in expected_types])}."
             finally:
@@ -166,12 +170,10 @@ def traceroute(hostname: str) -> None:
         print(f"{ttl:<5d}", end="")
         print(f"Usage: {args[0]} <hostname>")
         raise TimeoutError("Request timed out")
-        raise TimeoutError("Request timed out")
         raise ValueError(
         raise ValueError(f"Incorrect checksum: {check_sum_rcvd}")
         received_success = 0
         sys.exit(1)
-        traceroute(args[1])
     """Parse an ICMP reply"""
     )
     )
@@ -180,18 +182,16 @@ def traceroute(hostname: str) -> None:
     except IndexError:
     if check_sum_rcvd != socket.htons(check_sum_comptd):
     if icmp_msg_type not in expected_types:
-    if not what_ready[0]:
     if time_left <= 0:
-    main(sys.argv)
     pkt_rcvd, addr = open_socket.recvfrom(1024)
     print(
 
-    return (pkt_rcvd, addr[0])
     try:
 """Python traceroute implementation"""
 #!/usr/bin/env python3
 def main(args):
-def receive_reply(open_socket: socket, timeout: int = 1) -> tuple:
 
+        traceroute(args[1])
 if __name__ == "__main__":
+    main(sys.argv)
 
