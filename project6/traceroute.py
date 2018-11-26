@@ -91,13 +91,14 @@ def receive_reply(open_socket: socket, timeout: int = 1) -> tuple:
     """Receive an ICMP reply"""
     time_left = timeout
     started_select = time.time()  
-    pkt_rcvd, addr = open_socket.recvfrom(1024)
     how_long_in_select = time.time() - started_select
     time_left = time_left - how_long_in_select
     what_ready = select.select([open_socket], [], [], time_left)
-
+    #print(what_ready)
     if not what_ready[0]:
         raise TimeoutError("Request timed out")
+    pkt_rcvd, addr = open_socket.recvfrom(1024)
+
     if time_left <= 0:
         raise TimeoutError("Request timed out")
 
@@ -145,7 +146,8 @@ def traceroute(hostname: str) -> None:
                 received_success += 1
             except TimeoutError as te:
                 to_error_msg = str(te)
-                continue
+
+
             time_rcvd = time.time()
             rtt = (time_rcvd - time_sent) * 1000
             try:
@@ -153,15 +155,19 @@ def traceroute(hostname: str) -> None:
                 parsed_success += 1
             except ValueError as ve:
                 v_error_msg = str(ve)
-                continue
-            #ISSUES HERE
-            finally:
+
+            finally: #something that happens whether try was successful or not
                 my_icmp_socket.close()
+            #ISSUES HERE
 
             if to_error_msg:
                 print("{:>5s} {:2s}".format("TIME", " "), end="")
+                continue
+
             if v_error_msg:
                 print("{:>5s} {:2s}".format("ERR", " "), end="")
+                continue #skips loop body and takes to next iteration of loop
+
             print(f"{rtt:>5.0f} ms", end="")
 
         if to_error_msg:
