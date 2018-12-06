@@ -6,10 +6,10 @@
 import os
 import random
 import select
-import socket
+from socket import socket, AF_INET, SOCK_STREAM
 import struct
 import sys
-import time
+import datetime
 
 HOST_ID = os.path.splitext(__file__)[0].split("_")[-1]
 THIS_NODE = f"127.0.0.{HOST_ID}"
@@ -27,7 +27,23 @@ MESSAGES = [
 
 def read_file(filename: str) -> None:
     """Read config file"""
-    raise NotImplementedError
+
+    lines = [line.rstrip('\n') for line in open(filename,"r")]
+    #print(lines)
+    index = 0
+    for i in range(len(lines)):
+        if lines[i] == THIS_NODE:
+            index = i
+    i = index+1
+    while i<len(lines) and lines[i] != "":
+        addr, cost = lines[i].split(" ")
+        NEIGHBORS.add(addr)
+        ROUTING_TABLE[addr] = [cost, addr]
+        i+=1
+    
+
+
+
 
 
 def format_update():
@@ -42,6 +58,8 @@ def parse_update(msg, neigh_addr):
 
 def send_update(node):
     """Send update"""
+
+
     raise NotImplementedError
 
 
@@ -62,12 +80,25 @@ def send_hello(msg_txt, src_node, dst_node):
 
 def print_status():
     """Print status"""
-    raise NotImplementedError
+    print("\tHOST\t\tCOST\tVIA")
+    for item in ROUTING_TABLE:
+        print(f"\t{THIS_NODE}\t{ROUTING_TABLE[item][0]}\t{ROUTING_TABLE[item][1]}")
 
 
 def main(args: list):
     """Router main loop"""
-    raise NotImplementedError
+    start_time = datetime.datetime.now().strftime("%H:%M:%S")
+    print(f"{start_time} | Router {THIS_NODE} here")
+    udp_socket = socket(AF_INET, SOCK_STREAM)
+    print(f"{start_time} | Binding to {THIS_NODE}:{PORT}")
+    udp_socket.bind((THIS_NODE,PORT))
+    #udp_socket.connect() #send it a tuple of STRING_OF_IP_ADDRESS to connect to and PORT you want to connect to on that IP address. tuple of node and port. Port + int(destination node.split()) destination node is a string of address
+    print(f"{start_time} | Listening to {THIS_NODE}:{PORT}")
+    #udp_socket.listen(1)
+    read_file(args[1])
+    print_status()
+
+    #send to neighbors what you know
 
 
 if __name__ == "__main__":
