@@ -59,15 +59,15 @@ def read_file(filename: str) -> None:
 def format_update():
     """Format update message"""
     update = bytearray(b'\x00')
-    for item in NEIGHBORS:
-        neighbor = item.split(".")
-        byte1 = val_to_bytes(int(neighbor[0]),1)
+    for item in ROUTING_TABLE:
+        node = item.split(".")
+        byte1 = val_to_bytes(int(node[0]),1)
         #print(byte1)
         #print(type(bytes(byte1[0])))
-        byte2 = val_to_bytes(int(neighbor[1]),1)
-        byte3 = val_to_bytes(int(neighbor[2]),1)
-        byte4 = val_to_bytes(int(neighbor[3]),1)
-        #print(neighbor[3])
+        byte2 = val_to_bytes(int(node[1]),1)
+        byte3 = val_to_bytes(int(node[2]),1)
+        byte4 = val_to_bytes(int(node[3]),1)
+        #print(node[3])
         cost = val_to_bytes(int(ROUTING_TABLE[item][0]),1)
         #print(cost)
         update.extend(byte1)
@@ -110,16 +110,22 @@ def parse_update(msg, neigh_addr): #msg is bytes
 def send_update(node):
     """Send update"""
 
+    client_socket = socket(AF_INET, SOCK_DGRAM) #all will listen on port 4300
+    client_socket.bind((THIS_NODE,4300))
+    packet = format_update()
+    CLIENT_PORT = 4300 + int(node[len(node)-1])
+    client_socket.sendto(packet,(node,CLIENT_PORT))
+    client_socket.close()
+
+    #all listen on 4300
+    #all send to specific ports
 
 
-
-
-
-    raise NotImplementedError
 
 
 def format_hello(msg_txt, src_node, dst_node):
     """Format hello message"""
+
     hello = bytearray(b'\x01')
     src = src_node.split(".")
     dst = dst_node.split(".")
@@ -155,13 +161,31 @@ def format_hello(msg_txt, src_node, dst_node):
 
 def parse_hello(msg):
     """Send the message to an appropriate next hop"""
-    raise NotImplementedError
+
+    src_addr = msg[1:5]
+    dst_addr = msg[5:9]
+    txt = msg[9:]
+
+    if THIS_NODE == dst_addr:
+        print(f'received {} from {}'.format(txt,src_addr))
+    else:
+        send_hello(txt, src_addr, dst_addr)
 
 
 def send_hello(msg_txt, src_node, dst_node):
     """Send a message"""
-    raise NotImplementedError
 
+    #SEND TO NEXT HOP
+
+    
+    ROUTING_TABLE[dst_addr][1]
+
+    client_socket = socket(AF_INET, SOCK_DGRAM) #all will listen on port 4300
+    client_socket.bind((THIS_NODE,4300))
+    CLIENT_PORT = 4300 + int(dst_node[-1])
+    packet = format_hello(msg_txt, src_node, dst_node)
+    client_socket.sendto(packet,(dst_node,CLIENT_PORT))
+    client_socket.close()
 
 def print_status():
     """Print status"""
@@ -174,40 +198,73 @@ def main(args: list):
     """Router main loop"""
     start_time = datetime.datetime.now().strftime("%H:%M:%S")
     print(f"{start_time} | Router {THIS_NODE} here")
-    udp_socket = socket(AF_INET, SOCK_DGRAM)
+    server_socket = socket(AF_INET, SOCK_DGRAM)
     print(f"{start_time} | Binding to {THIS_NODE}:{PORT}")
-    udp_socket.bind((THIS_NODE,PORT))
+    server_socket.bind((THIS_NODE,4300 + int(THIS_NODE[-1]))) #port = specific port
     #udp_socket.listen(4)
     print(f"{start_time} | Listening to {THIS_NODE}:{PORT}")
     read_file(args[1])
     print_status()
     #neighbors = select(NEIGHBORS.keys(),NEIGHBORS.keys(),NEIGHBORS.keys())
 
+    for item in NEIGHBORS:
+        send_update(item)
+
+
+
     format_update()
 
     #format_hello(MESSAGES[random.randint(0,len(MESSAGES))],THIS_NODE,'127.0.0.2')
-    sample_msg = bytearray(b'\x00\x7f\x00\x00\x03\x01\x7f\x00\x00\x01\x01')
-    parse_update(sample_msg, '127.0.0.2')
-    print_status()
+    #sample_msg = bytearray(b'\x00\x7f\x00\x00\x03\x01\x7f\x00\x00\x01\x01')
+    #parse_update(sample_msg, '127.0.0.2')
+    #print_status()
 
 
 
+    #for loop that sends updates to all neighbors
 
+    #hello message to everyone in routers. Just look at next hop
+    #acknowledge hello got there. If dest is me print received from. Each router checks if dst is me. If not send to next hop. When get to destination print received from sent
+    #update message only to neighbors
 
     #send to neighbors what you know
 
-    # inputs = [udp_socket]
-    # outputs = []
-    # messages = []
+    inputs = [server_socket]
+    outputs = []
+    messages = []
 
-    # while True:
-    #     receive, send, error = select.select(inputs, outputs, inputs)
-    #     for sock in receive:
-    #         pass 
-    #     for sock in send:
-    #         pass
-    #     for sock in error:
-    #         pass
+    #send on 4300, listen on your own
+
+    #TO TEST: send update to 127.0.0.4 
+    while len(inputs)>0:
+        readable, writable, error = select.select(inputs, [], [], TIMEOUT)
+        for sock in readable:
+            #if sock == this?
+            #look at first byte
+            #parse update or parse hello
+            #after you've parsed the message send update
+            #outputs never used because its done inside send update or send hello
+
+            data, addr = sock.recvfrom(1024)
+            if data[0] == 0:
+                update = parse_update(data, addr) #sock needs to be a string
+                if update:
+                    print(f"table updated with information from {}".format(addr))
+                    print_status()
+                    for item in NEIGHBORS:
+                        send_update(item)
+            else:
+                parse_hello(data)
+
+        #DO THIS SATURDAY
+        #random number. If valid do hello. Random msg. Random list of routing_table.keys() send random hello message to random node
+        #same with updates. Can choose not to except when they actually change. Should since you start all separately
+
+                #do the same thing
+        for sock in send:
+            pass
+        for sock in error:
+            pass
 
 
 #CLIENT
