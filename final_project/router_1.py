@@ -90,7 +90,7 @@ def parse_update(msg, neigh_addr): #msg is bytes
                 if addr not in ROUTING_TABLE:
                     update = True
                     ROUTING_TABLE[addr] = [str(int(ROUTING_TABLE[neigh_addr][0]) +  cost), neigh_addr]
-                else:
+                if addr in ROUTING_TABLE:
                     if total_cost < int(ROUTING_TABLE[addr][0]):
                         update = True
                         ROUTING_TABLE[addr] = [str(int(ROUTING_TABLE[neigh_addr][0]) +  cost), neigh_addr]
@@ -217,11 +217,13 @@ def main(args: list):
             if heard_from[item] == False:
                 send_update(item)
 
-        hello = random.randint(0,100)
+        hello = random.randint(0,100000)
         if hello < 10:
+            print("sending hello")
             send_hello(random.choice(MESSAGES), THIS_NODE, random.choice(list(ROUTING_TABLE.keys())))
-        resend = random.randint(0,100)
+        resend = random.randint(0,100000)
         if resend < 10:
+            print("sending update")
             for ip in NEIGHBORS:
                 send_update(ip)
 
