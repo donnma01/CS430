@@ -83,7 +83,7 @@ def parse_update(msg, neigh_addr): #msg is bytes
                 total_cost = cost_to_neighbor + cost
                 if total_cost < int(ROUTING_TABLE[addr][0]):
                     update = True
-                    ROUTING_TABLE[addr] = [str(total_cost),neigh_addr]
+                    ROUTING_TABLE[addr] = [str(total_cost),ROUTING_TABLE[neigh_addr][1]]
             if addr not in NEIGHBORS:
                 cost_to_neighbor = int(ROUTING_TABLE[neigh_addr][0])
                 total_cost = cost_to_neighbor + cost
@@ -92,8 +92,9 @@ def parse_update(msg, neigh_addr): #msg is bytes
                     ROUTING_TABLE[addr] = [str(int(ROUTING_TABLE[neigh_addr][0]) +  cost), neigh_addr]
                 if addr in ROUTING_TABLE:
                     if total_cost < int(ROUTING_TABLE[addr][0]):
+                        print("Next hop", neigh_addr)
                         update = True
-                        ROUTING_TABLE[addr] = [str(int(ROUTING_TABLE[neigh_addr][0]) +  cost), neigh_addr]
+                        ROUTING_TABLE[addr] = [str(int(ROUTING_TABLE[neigh_addr][0]) +  cost), ROUTING_TABLE[neigh_addr][1]]
 
     return update
 
@@ -151,7 +152,7 @@ def parse_hello(msg):
     txt = msg[9:].decode()
 
     if THIS_NODE == dst_addr:
-        print('{}| Received {} from {}'.format(datetime.datetime.now().strftime("%H:%M:%S"),txt,src_addr))
+        return [datetime.datetime.now().strftime("%H:%M:%S"),txt,src_addr]
     else:
         send_hello(txt, src_addr, dst_addr)
 
@@ -211,19 +212,25 @@ def main(args: list):
                         for item in NEIGHBORS:
                             send_update(item)
                 if data[0] == 1:
-                    parse_hello(data)
+                    ans = parse_hello(data)
+                    if not(ans == None):
+                        print('{}| Received {} from {} via {}'.format(ans[0], ans[1], ans[2], addr[0]))
+
 
         for item in heard_from:
             if heard_from[item] == False:
                 send_update(item)
 
-        hello = random.randint(0,100000)
+        hello = random.randint(0,500000)
         if hello < 10:
-            print("sending hello")
-            send_hello(random.choice(MESSAGES), THIS_NODE, random.choice(list(ROUTING_TABLE.keys())))
+            #print("sending hello")
+            msg = random.choice(MESSAGES)
+            recv = random.choice(list(ROUTING_TABLE.keys()))
+            print("{} | Sending {} to {}".format(datetime.datetime.now().strftime("%H:%M:%S"), msg, recv))
+            send_hello(msg, THIS_NODE, recv)
         resend = random.randint(0,100000)
         if resend < 10:
-            print("sending update")
+            #print("sending update")
             for ip in NEIGHBORS:
                 send_update(ip)
 
